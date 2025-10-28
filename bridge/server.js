@@ -37,14 +37,16 @@ server.registerTool(
     inputSchema: {
       type:"object",
       properties: {
-        query:{
+        name:{
           type:"string"
-        }
-      }
+        },
+        description: "model name, refarence",
+      },
+      required: ["name"]
     }
   },
   async (args) => {
-    const q = (args?.query ?? "").toString().trim();
+    const q = (args?.name ?? "").toString().trim();
     try {
       if (q) {
         const data = await fetchJson(`${UI_API}/api/search?q=${encodeURIComponent(q)}`);

@@ -1,3 +1,9 @@
+// server.js 先頭付近
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const sdkPkg = require("@modelcontextprotocol/sdk/package.json");
+console.log("MCP SDK =", sdkPkg.version);
+
 import express from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
@@ -9,7 +15,7 @@ const app = express();
 app.use(express.json());
 app.use((req,res,next)=>{ console.log(req.method, req.url); next(); });
 
-const server = new McpServer({ name: "mcp-bridge-shopify", version: "0.2.5" });
+const server = new McpServer({ name: "mcp-bridge-shopify", version: "0.2.6" });
 
 // 最小JSON Schema（説明・$schemaは付けない）
 const searchInputSchema = Object.freeze({

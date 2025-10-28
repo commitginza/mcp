@@ -38,9 +38,9 @@ server.registerTool(
       type:"object",
       properties: {
         name:{
-          type:"string"
-        },
-        description: "model name, refarence",
+          type:"string",
+          description: "model name, refarence"
+        }
       },
       required: ["name"]
     }

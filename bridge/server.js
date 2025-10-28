@@ -1,11 +1,11 @@
-import { readFileSync } from "node:fs";
-import { createRequire } from "node:module";
+import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 try {
-  const sdkVer = JSON.parse(readFileSync(require.resolve("@modelcontextprotocol/sdk/package.json"), "utf8")).version;
-  console.log("MCP SDK =", sdkVer);
-} catch {}
-
+  const p = require.resolve("@modelcontextprotocol/sdk/server/mcp.js");
+  console.log("MCP SDK module =", p);  // これが出ればSDKは入っている
+} catch (e) {
+  console.log("MCP SDK not resolvable:", e.message);
+}
 
 import express from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -18,7 +18,7 @@ const app = express();
 app.use(express.json());
 app.use((req,res,next)=>{ console.log(req.method, req.url); next(); });
 
-const server = new McpServer({ name: "mcp-bridge-shopify", version: "0.2.8" });
+const server = new McpServer({ name: "mcp-bridge-shopify", version: "0.2.9" });
 
 // 最小JSON Schema（説明・$schemaは付けない）
 const searchInputSchema = { type:"object", properties:{ query:{ type:"string" } }, required:["query"], additionalProperties:false };

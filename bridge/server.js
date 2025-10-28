@@ -12,14 +12,22 @@ app.use((req,res,next)=>{ console.log(req.method, req.url); next(); });
 const server = new McpServer({ name: "mcp-bridge-shopify", version: "0.2.0" });
 
 // JSON Schema（query は任意）
+// const searchInputSchema = {
+//   type: "object",
+//   additionalProperties: false,
+//   properties: {
+//     query: { type: "string", description: "検索語。空や未指定なら在庫ありTOP10を返す" }
+//   }
+// };
 const searchInputSchema = {
+  $schema: "http://json-schema.org/draft-07/schema#",
   type: "object",
   additionalProperties: false,
   properties: {
-    query: { type: "string", description: "検索語。空や未指定なら在庫ありTOP10を返す" }
-  }
+    query: { type: "string", title: "検索語", description: "例: デイトナ / Ref.126500" }
+  },
+  required: ["query"]   // ← これが無いとUIが項目を出さない場合がある
 };
-
 const asText = (data) => ({ content: [{ type: "text", text: JSON.stringify(data, null, 2) }] });
 
 async function fetchJson(url) {

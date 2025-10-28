@@ -18,7 +18,7 @@ const app = express();
 app.use(express.json());
 app.use((req,res,next)=>{ console.log(req.method, req.url); next(); });
 
-const server = new McpServer({ name: "mcp-bridge-shopify", version: "0.2.7" });
+const server = new McpServer({ name: "mcp-bridge-shopify", version: "0.2.8" });
 
 // 最小JSON Schema（説明・$schemaは付けない）
 const searchInputSchema = { type:"object", properties:{ query:{ type:"string" } }, required:["query"], additionalProperties:false };

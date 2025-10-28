@@ -1,5 +1,6 @@
 import express from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 
 const PORT = Number(process.env.PORT || 8080);
@@ -9,25 +10,18 @@ const app = express();
 app.use(express.json());
 app.use((req,res,next)=>{ console.log(req.method, req.url); next(); });
 
-const server = new McpServer({ name: "mcp-bridge-shopify", version: "0.2.0" });
+const server = new McpServer({ name: "mcp-bridge-shopify", version: "0.2.1" });
 
-// JSON Schema（query は任意）
+const searchInputSchema = z.object({
+  query: z.string().describe("検索語。例: デイトナ / Ref.126500")
+});
+// or zodを使用せずに下記
 // const searchInputSchema = {
 //   type: "object",
-//   additionalProperties: false,
-//   properties: {
-//     query: { type: "string", description: "検索語。空や未指定なら在庫ありTOP10を返す" }
-//   }
+//   properties: { query: { type: "string" } },
+//   required: ["query"],
+//   additionalProperties: false
 // };
-const searchInputSchema = {
-  $schema: "http://json-schema.org/draft-07/schema#",
-  type: "object",
-  additionalProperties: false,
-  properties: {
-    query: { type: "string", title: "検索語", description: "例: デイトナ / Ref.126500" }
-  },
-  required: ["query"]   // ← これが無いとUIが項目を出さない場合がある
-};
 const asText = (data) => ({ content: [{ type: "text", text: JSON.stringify(data, null, 2) }] });
 
 async function fetchJson(url) {

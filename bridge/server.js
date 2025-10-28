@@ -1,11 +1,11 @@
-// server.js 先頭付近
-import { createRequire } from "module";
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
-// バージョン表示は不要。どうしても出すならモジュール解決のみ（失敗しても無視）
 try {
-  const r = require.resolve("@modelcontextprotocol/sdk/server/mcp.js");
-  console.log("MCP SDK module =", r);
+  const sdkVer = JSON.parse(readFileSync(require.resolve("@modelcontextprotocol/sdk/package.json"), "utf8")).version;
+  console.log("MCP SDK =", sdkVer);
 } catch {}
+
 
 import express from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -21,12 +21,8 @@ app.use((req,res,next)=>{ console.log(req.method, req.url); next(); });
 const server = new McpServer({ name: "mcp-bridge-shopify", version: "0.2.7" });
 
 // 最小JSON Schema（説明・$schemaは付けない）
-const searchInputSchema = Object.freeze({
-  type: "object",
-  properties: { query: { type: "string" } },
-  required: ["query"],
-  additionalProperties: false
-});
+const searchInputSchema = { type:"object", properties:{ query:{ type:"string" } }, required:["query"], additionalProperties:false };
+
 console.log("SCHEMA:", JSON.stringify(searchInputSchema));
 
 const asText = (data) => ({ content: [{ type: "text", text: JSON.stringify(data, null, 2) }] });
@@ -43,7 +39,7 @@ server.registerTool(
   {
     title: "在庫あり検索",
     description: "例: 「デイトナ」や「Ref.126500」。空なら販売中在庫TOP10。",
-    inputSchema: JSON.parse('{"type":"object","properties":{"query":{"type":"string"}},"required":["query"],"additionalProperties":false}')
+    inputSchema: searchInputSchema
   },
   async (args) => {
     const q = (args?.query ?? "").toString().trim();

@@ -18,7 +18,7 @@ const app = express();
 app.use(express.json());
 app.use((req,res,next)=>{ console.log(req.method, req.url); next(); });
 
-const server = new McpServer({ name: "mcp-bridge-shopify", version: "0.2.15" });
+const server = new McpServer({ name: "mcp-bridge-shopify", version: "0.2.16" });
 
 const asText = (data) => ({ content: [{ type: "text", text: JSON.stringify(data, null, 2) }] });
 
@@ -35,15 +35,14 @@ server.registerTool(
     title: "在庫あり検索",
     description: "例: 「デイトナ」や「Ref.126500」。空なら販売中在庫TOP10。",
     inputSchema: {
-      type:"object"
-      // type:"object",
-      // properties: {
-      //   name:{
-      //     type:"string",
-      //     description: "model name, refarence"
-      //   }
-      // },
-      // required: ["name"]
+      type:"object",
+      properties: {
+        name:{
+          type:["string","null"],
+          description: "model name, refarence"
+        }
+      },
+      required: []
     }
   },
   async (args) => {

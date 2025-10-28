@@ -9,16 +9,16 @@ const app = express();
 app.use(express.json());
 app.use((req,res,next)=>{ console.log(req.method, req.url); next(); });
 
-const server = new McpServer({ name: "mcp-bridge-shopify", version: "0.2.3" });
+const server = new McpServer({ name: "mcp-bridge-shopify", version: "0.2.5" });
 
-// 最小JSON Schema（説明や$schemaは付けない）
-const searchInputSchema = {
+// 最小JSON Schema（説明・$schemaは付けない）
+const searchInputSchema = Object.freeze({
   type: "object",
   properties: { query: { type: "string" } },
   required: ["query"],
   additionalProperties: false
-};
-console.log("SCHEMA:", JSON.stringify(searchInputSchema)); // ←確認用ログ
+});
+console.log("SCHEMA:", JSON.stringify(searchInputSchema));
 
 const asText = (data) => ({ content: [{ type: "text", text: JSON.stringify(data, null, 2) }] });
 
@@ -28,6 +28,7 @@ async function fetchJson(url) {
   return r.json();
 }
 
+// 在庫>0のみ検索。空や失敗時はTOP10フォールバック。
 server.registerTool(
   "shopify.search_in_stock",
   {

@@ -15,7 +15,7 @@ const app = express();
 app.use(express.json());
 app.use((req,res,next)=>{ console.log(req.method, req.url); next(); });
 
-const server = new McpServer({ name: "mcp-bridge-shopify", version: "0.2.6" });
+const server = new McpServer({ name: "mcp-bridge-shopify", version: "0.2.7" });
 
 // 最小JSON Schema（説明・$schemaは付けない）
 const searchInputSchema = Object.freeze({
@@ -40,7 +40,7 @@ server.registerTool(
   {
     title: "在庫あり検索",
     description: "例: 「デイトナ」や「Ref.126500」。空なら販売中在庫TOP10。",
-    inputSchema: searchInputSchema
+    inputSchema: JSON.parse('{"type":"object","properties":{"query":{"type":"string"}},"required":["query"],"additionalProperties":false}')
   },
   async (args) => {
     const q = (args?.query ?? "").toString().trim();

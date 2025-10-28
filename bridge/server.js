@@ -1,6 +1,5 @@
 import express from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 
 const PORT = Number(process.env.PORT || 8080);
@@ -12,16 +11,13 @@ app.use((req,res,next)=>{ console.log(req.method, req.url); next(); });
 
 const server = new McpServer({ name: "mcp-bridge-shopify", version: "0.2.1" });
 
-const searchInputSchema = z.object({
-  query: z.string().describe("検索語。例: デイトナ / Ref.126500")
-});
 // or zodを使用せずに下記
-// const searchInputSchema = {
-//   type: "object",
-//   properties: { query: { type: "string" } },
-//   required: ["query"],
-//   additionalProperties: false
-// };
+const searchInputSchema = {
+  type: "object",
+  properties: { query: { type: "string" } },
+  required: ["query"],
+  additionalProperties: false
+};
 const asText = (data) => ({ content: [{ type: "text", text: JSON.stringify(data, null, 2) }] });
 
 async function fetchJson(url) {

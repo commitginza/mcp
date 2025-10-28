@@ -18,27 +18,11 @@ const app = express();
 app.use(express.json());
 app.use((req,res,next)=>{ console.log(req.method, req.url); next(); });
 
-const server = new McpServer({ name: "mcp-bridge-shopify", version: "0.2.9" });
+const server = new McpServer({ name: "mcp-bridge-shopify", version: "0.2.10" });
 
-// 文字列→オブジェクトを強制。将来また文字列化されても復元する。
-function normalizeSchema(s) {
-  const out = typeof s === "string" ? JSON.parse(s) : structuredClone(s);
-  if (typeof out.properties === "string") {
-    try { out.properties = JSON.parse(out.properties); } catch {}
-  }
-  if (!out.properties || typeof out.properties !== "object") {
-    throw new Error("inputSchema.properties must be an object");
-  }
-  return out;
-}
-
-// 生の定義（プレーンJSオブジェクト）
-const RAW_SCHEMA = { type:"object", properties:{ query:{ type:"string" } }, required:["query"], additionalProperties:false };
-
-// ログと検証
-const inputSchema = normalizeSchema(RAW_SCHEMA);
-console.log("SCHEMA NORMALIZED:", JSON.stringify(inputSchema));
-console.log("typeof properties =", typeof inputSchema.properties); // 必ず "object" になる
+// SDKの正規化で落ちない最小構成を “JSON.parse” でプレーン化して渡す
+const inputSchema = JSON.parse('{"type":"object","properties":{"query":{"type":"string"}}}');
+console.log("SCHEMA MIN:", JSON.stringify(inputSchema));
 
 const asText = (data) => ({ content: [{ type: "text", text: JSON.stringify(data, null, 2) }] });
 

@@ -1,8 +1,11 @@
 // server.js 先頭付近
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
-const sdkPkg = require("@modelcontextprotocol/sdk/package.json");
-console.log("MCP SDK =", sdkPkg.version);
+// バージョン表示は不要。どうしても出すならモジュール解決のみ（失敗しても無視）
+try {
+  const r = require.resolve("@modelcontextprotocol/sdk/server/mcp.js");
+  console.log("MCP SDK module =", r);
+} catch {}
 
 import express from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";

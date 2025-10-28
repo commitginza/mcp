@@ -20,10 +20,25 @@ app.use((req,res,next)=>{ console.log(req.method, req.url); next(); });
 
 const server = new McpServer({ name: "mcp-bridge-shopify", version: "0.2.9" });
 
-// 最小JSON Schema（説明・$schemaは付けない）
-const searchInputSchema = { type:"object", properties:{ query:{ type:"string" } }, required:["query"], additionalProperties:false };
+// 文字列→オブジェクトを強制。将来また文字列化されても復元する。
+function normalizeSchema(s) {
+  const out = typeof s === "string" ? JSON.parse(s) : structuredClone(s);
+  if (typeof out.properties === "string") {
+    try { out.properties = JSON.parse(out.properties); } catch {}
+  }
+  if (!out.properties || typeof out.properties !== "object") {
+    throw new Error("inputSchema.properties must be an object");
+  }
+  return out;
+}
 
-console.log("SCHEMA:", JSON.stringify(searchInputSchema));
+// 生の定義（プレーンJSオブジェクト）
+const RAW_SCHEMA = { type:"object", properties:{ query:{ type:"string" } }, required:["query"], additionalProperties:false };
+
+// ログと検証
+const inputSchema = normalizeSchema(RAW_SCHEMA);
+console.log("SCHEMA NORMALIZED:", JSON.stringify(inputSchema));
+console.log("typeof properties =", typeof inputSchema.properties); // 必ず "object" になる
 
 const asText = (data) => ({ content: [{ type: "text", text: JSON.stringify(data, null, 2) }] });
 
@@ -39,7 +54,7 @@ server.registerTool(
   {
     title: "在庫あり検索",
     description: "例: 「デイトナ」や「Ref.126500」。空なら販売中在庫TOP10。",
-    inputSchema: searchInputSchema
+    inputSchema
   },
   async (args) => {
     const q = (args?.query ?? "").toString().trim();

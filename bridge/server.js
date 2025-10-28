@@ -18,7 +18,7 @@ const app = express();
 app.use(express.json());
 app.use((req,res,next)=>{ console.log(req.method, req.url); next(); });
 
-const server = new McpServer({ name: "mcp-bridge-shopify", version: "0.2.16" });
+const server = new McpServer({ name: "mcp-bridge-shopify", version: "0.2.17" });
 
 const asText = (data) => ({ content: [{ type: "text", text: JSON.stringify(data, null, 2) }] });
 
@@ -38,7 +38,7 @@ server.registerTool(
       type:"object",
       properties: {
         name:{
-          type:["string","null"],
+          type:"string",
           description: "model name, refarence"
         }
       },

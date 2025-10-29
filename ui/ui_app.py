@@ -1,14 +1,21 @@
 import os, requests
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify, Response, abort
+from flask_cors import CORS
 
 load_dotenv()
+
 STORE = os.environ["SHOPIFY_STORE_DOMAIN"]
 MODE  = os.environ.get("SHOPIFY_API_MODE", "admin").lower()
 SF_TOKEN = os.environ.get("SHOPIFY_STOREFRONT_TOKEN")
 AD_TOKEN = os.environ.get("SHOPIFY_ADMIN_TOKEN")
 
+# 任意: ChatGPT Actions 等向けのAPIキー。設定されている場合のみ必須化。
+ACTIONS_API_KEY = os.environ.get("ACTIONS_API_KEY")
+
 app = Flask(__name__)
+# 必要に応じてCORS許可（Actionsはサーバ間通信なので不要だが、ブラウザ検証時に便利）
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 def endpoint_headers():
     if MODE == "admin":
@@ -19,6 +26,25 @@ def endpoint_headers():
         return (f"https://{STORE}/api/2024-10/graphql.json",
                 {"Content-Type":"application/json",
                  "X-Shopify-Storefront-Access-Token":SF_TOKEN})
+
+@app.before_request
+def _require_api_key_if_configured():
+    # /healthz と /openapi.json は常に許可
+    if request.path in ("/healthz", "/openapi.json"):
+        return
+    # APIキーが設定されていなければスキップ
+    if not ACTIONS_API_KEY:
+        return
+    # /api/ 以下のみ保護（必要なら範囲を広げる）
+    if request.path.startswith("/api/"):
+        api_key = request.headers.get("X-API-Key") or request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+        if api_key != ACTIONS_API_KEY:
+            return jsonify({"error":"unauthorized"}), 401
+
+@app.errorhandler(Exception)
+def _on_error(e):
+    code = getattr(e, "code", 500)
+    return jsonify({"error": str(e)}), code
 
 @app.get("/healthz")
 def healthz():
@@ -132,4 +158,96 @@ def api_search():
         })
     return jsonify(out)
 
-# 本番は gunicorn で起動する（Dockerfileで設定）
+@app.get("/openapi.json")
+def openapi_json():
+    """
+    ChatGPT Actions 用の OpenAPI 3.0 スキーマを動的生成。
+    operationId 必須、application/json のみ、複雑な schema 合成を不使用。
+    """
+    server_url = request.url_root.rstrip("/")
+    spec = {
+      "openapi": "3.0.3",
+      "info": {
+        "title": "Shopify Product Search API",
+        "version": "1.0.0",
+        "description": "在庫あり商品の検索API。UIと同一ホストで提供。"
+      },
+      "servers": [{"url": server_url}],
+      "paths": {
+        "/api/search": {
+          "get": {
+            "operationId": "searchProducts",
+            "summary": "商品検索",
+            "description": "クエリ語でShopify商品を検索。未指定またはfallback時は在庫ありの上位を返す。",
+            "parameters": [
+              {"name":"q","in":"query","required":False,
+               "schema":{"type":"string"}, "description":"検索語。スペース区切り。"},
+              {"name":"limit","in":"query","required":False,
+               "schema":{"type":"integer","minimum":1,"maximum":50,"default":100},
+               "description":"最大件数（1〜50）"},
+              {"name":"fallback","in":"query","required":False,
+               "schema":{"type":"string"},
+               "description":"存在するだけでfallback検索を有効化"}
+            ],
+            "responses": {
+              "200": {
+                "description": "検索結果",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type":"array",
+                      "items":{"$ref":"#/components/schemas/Product"}
+                    }
+                  }
+                }
+              },
+              "400": {"description":"不正リクエスト"},
+              "401": {"description":"未認証"},
+              "500": {"description":"サーバエラー"}
+            },
+            "security": ([{"ApiKeyAuth": []}] if ACTIONS_API_KEY else [])
+          }
+        }
+      },
+      "components": {
+        "schemas": {
+          "Money": {
+            "type":"object",
+            "properties":{
+              "amount":{"type":"number"},
+              "currencyCode":{"type":["string","null"]}
+            },
+            "required":["amount","currencyCode"]
+          },
+          "Image": {
+            "type":"object",
+            "properties":{
+              "url":{"type":["string","null"]},
+              "alt":{"type":["string","null"]}
+            }
+          },
+          "Product": {
+            "type":"object",
+            "properties":{
+              "title":{"type":["string","null"]},
+              "url":{"type":["string","null"]},
+              "vendor":{"type":["string","null"]},
+              "productType":{"type":["string","null"]},
+              "inventory":{"type":"integer"},
+              "price":{"$ref":"#/components/schemas/Money"},
+              "image":{"$ref":"#/components/schemas/Image"}
+            },
+            "required":["title","url","inventory","price"]
+          }
+        },
+        "securitySchemes": ({
+          "ApiKeyAuth": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "X-API-Key",
+            "description": "環境変数 ACTIONS_API_KEY が設定されている場合に必須"
+          }
+        } if ACTIONS_API_KEY else {})
+      }
+    }
+    return jsonify(spec)

@@ -68,7 +68,7 @@ def _on_error(e):
 
 @app.route("/healthz", methods=["GET", "HEAD"])
 def healthz():
-    body = "healthy 🎯 V0.0.1"  # ← ここを書き換える
+    body = "healthy 🎯 V0.0.2"  # ← ここを書き換える
     if request.method == "HEAD":
         return ("", 200, {"Content-Type": "text/plain", "Cache-Control": "no-store"})
     return Response(body, status=200, mimetype="text/plain",

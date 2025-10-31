@@ -66,11 +66,13 @@ def _on_error(e):
     return jsonify({"error": str(e)}), code
 
 
-@app.get("/healthz")
+@app.route("/healthz", methods=["GET", "HEAD"])
 def healthz():
-    status = {"storeDomain": bool(STORE), "mode": MODE, "hasAdminToken": bool(AD_TOKEN), "hasStorefrontToken": bool(SF_TOKEN)}
-    code = 200 if STORE else 500
-    return jsonify({"okok": code == 200, **status}), code
+    body = "healthy 🎯 V0.0.1"  # ← ここを書き換える
+    if request.method == "HEAD":
+        return ("", 200, {"Content-Type": "text/plain", "Cache-Control": "no-store"})
+    return Response(body, status=200, mimetype="text/plain",
+                    headers={"Cache-Control": "no-store"})
  
 
 @app.get("/api/search")

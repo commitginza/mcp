@@ -70,7 +70,7 @@ def _on_error(e):
 def healthz():
     status = {"storeDomain": bool(STORE), "mode": MODE, "hasAdminToken": bool(AD_TOKEN), "hasStorefrontToken": bool(SF_TOKEN)}
     code = 200 if STORE else 500
-    return jsonify({"ok": code == 200, **status}), code
+    return jsonify({"okok": code == 200, **status}), code
  
 
 @app.get("/api/search")

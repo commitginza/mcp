@@ -67,6 +67,6 @@ app.post("/mcp", async (req, res) => {
   await transport.handleRequest(req, res, req.body);
 });
 
-app.get("/healthz", (_, res) => res.status(200).send("ok"));
+app.get("/healthz", (_, res) => res.status(200).send("ok001"));
 app.listen(PORT, "0.0.0.0", () => console.log(`MCP bridge on :${PORT}/mcp`));
 process.on("unhandledRejection", e => console.error("UnhandledRejection", e));

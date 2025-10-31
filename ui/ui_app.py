@@ -2,12 +2,13 @@
 import os
 import requests
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify, Response, abort, json
+from flask import Flask, request, jsonify, Response, abort
+import json as pyjson
 from flask_cors import CORS
 
 load_dotenv()
 
-STORE = os.environ["SHOPIFY_STORE_DOMAIN"]
+STORE = os.environ.get("SHOPIFY_STORE_DOMAIN")
 MODE = os.environ.get("SHOPIFY_API_MODE", "admin").lower()
 SF_TOKEN = os.environ.get("SHOPIFY_STOREFRONT_TOKEN")
 AD_TOKEN = os.environ.get("SHOPIFY_ADMIN_TOKEN")
@@ -23,7 +24,8 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 
 def endpoint_headers():
-    if MODE == "admin":
+    if not STORE:
+        abort(500, "SHOPIFY_STORE_DOMAIN not set")    if MODE == "admin":
         return (
             f"https://{STORE}/admin/api/2024-10/graphql.json",
             {
@@ -66,8 +68,10 @@ def _on_error(e):
 
 @app.get("/healthz")
 def healthz():
-    return "ok", 200
-
+    status = {"storeDomain": bool(STORE), "mode": MODE, "hasAdminToken": bool(AD_TOKEN), "hasStorefrontToken": bool(SF_TOKEN)}
+    code = 200 if STORE else 500
+    return jsonify({"ok": code == 200, **status}), code
+ 
 
 @app.get("/api/search")
 def api_search():
@@ -296,7 +300,7 @@ def _build_openapi_spec(server_url: str, key_required: bool):
 def _openapi_response():
     server_url = request.url_root.rstrip("/")
     spec = _build_openapi_spec(server_url, bool(ACTIONS_API_KEY))
-    return Response(json.dumps(spec), mimetype="application/json")
+    return Response(pyjson.dumps(spec), mimetype="application/json")
 
 
 @app.get("/openapi.json")
@@ -314,5 +318,9 @@ def index():
             "health": "/healthz",
             "openapi": ["/openapi.json", "/openapi", "/.well-known/openapi.json"],
             "search_example": "/api/search?q=デイトナ",
+            "env_status": {
+                "storeDomain_set": bool(STORE),
+                "mode": MODE
+            }
         }
     )
